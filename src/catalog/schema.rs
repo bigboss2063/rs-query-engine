@@ -1,6 +1,6 @@
-use arrow::datatypes;
-use crate::error::Error;
 use crate::catalog::fields::Field;
+use crate::error::Error;
+use arrow::datatypes;
 
 #[derive(Debug, Clone)]
 /// Schema holds the metadata for a relation
