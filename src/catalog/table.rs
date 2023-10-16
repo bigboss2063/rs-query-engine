@@ -1,6 +1,7 @@
 use crate::catalog::schema::Schema;
 use crate::error::Result;
-use arrow::array::RecordBatch;
+use arrow::record_batch::RecordBatch;
+
 use std::fmt::Debug;
 
 /// Implement this trait to implement each data source type, such as memory, csv or Parquet

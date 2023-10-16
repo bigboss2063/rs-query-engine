@@ -1,5 +1,5 @@
+mod catalog;
 mod fields;
 mod scalar;
-mod schema;
-mod table;
-mod catalog;
+pub mod schema;
+pub mod table;

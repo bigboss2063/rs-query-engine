@@ -23,7 +23,7 @@ impl Schema {
                 .fields()
                 .iter()
                 .map(|field| Field {
-                    field: field.as_ref().clone(),
+                    field: field.clone(),
                 })
                 .collect(),
         )
