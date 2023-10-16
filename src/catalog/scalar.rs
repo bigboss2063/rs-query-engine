@@ -7,7 +7,7 @@ use arrow::{
 };
 use std::{iter::repeat, sync::Arc, vec};
 
-use super::fields::Field;
+use crate::catalog::fields::Field;
 
 #[derive(Debug, Clone)]
 /// Scalar values can be converted to array values
