@@ -3,3 +3,4 @@
 mod catalog;
 mod datasource;
 mod error;
+mod logical_plan;

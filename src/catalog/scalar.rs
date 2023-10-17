@@ -7,7 +7,8 @@ use arrow::{
 };
 use std::{iter::repeat, sync::Arc, vec};
 
-use crate::catalog::fields::Field;
+use crate::catalog::field::Field;
+use crate::error::Result;
 
 #[derive(Debug, Clone)]
 /// Scalar values can be converted to array values
@@ -38,14 +39,14 @@ macro_rules! scalar_to_array {
 
 impl Scalar {
     /// Creates a Field corresponding to the scalar value type
-    pub fn to_field(&self) -> Field {
+    pub fn to_field(&self) -> Result<Field> {
         match self {
-            Scalar::Null => Field::new("Null", DataType::Null, true),
-            Scalar::Boolean(_) => Field::new("Boolean", DataType::Boolean, true),
-            Scalar::Float64(_) => Field::new("Float64", DataType::Float64, true),
-            Scalar::Int64(_) => Field::new("Int64", DataType::Int64, true),
-            Scalar::UInt64(_) => Field::new("UInt64", DataType::UInt64, true),
-            Scalar::Utf8(_) => Field::new("Utf8", DataType::Utf8, true),
+            Scalar::Null => Ok(Field::new("Null", DataType::Null, true)),
+            Scalar::Boolean(_) => Ok(Field::new("Boolean", DataType::Boolean, true)),
+            Scalar::Float64(_) => Ok(Field::new("Float64", DataType::Float64, true)),
+            Scalar::Int64(_) => Ok(Field::new("Int64", DataType::Int64, true)),
+            Scalar::UInt64(_) => Ok(Field::new("UInt64", DataType::UInt64, true)),
+            Scalar::Utf8(_) => Ok(Field::new("Utf8", DataType::Utf8, true)),
         }
     }
 
@@ -61,6 +62,17 @@ impl Scalar {
                 Some(str) => Arc::new(StringArray::from_iter_values(repeat(str).take(size))),
                 None => new_null_array(&DataType::Utf8, size),
             },
+        }
+    }
+
+    pub fn to_string(&self) -> String {
+        match self {
+            Scalar::Boolean(Some(val)) => val.to_string(),
+            Scalar::Int64(Some(val)) => val.to_string(),
+            Scalar::UInt64(Some(val)) => val.to_string(),
+            Scalar::Float64(Some(val)) => val.to_string(),
+            Scalar::Utf8(Some(val)) => val.to_string(),
+            _ => "null".to_string(),
         }
     }
 }

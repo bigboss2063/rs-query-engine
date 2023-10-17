@@ -1,4 +1,4 @@
-use crate::catalog::fields::Field;
+use crate::catalog::field::Field;
 use crate::error::Error;
 use arrow::datatypes;
 
