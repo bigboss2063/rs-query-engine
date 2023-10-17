@@ -2,7 +2,7 @@ use crate::catalog::field::Field;
 use crate::catalog::scalar::Scalar;
 use crate::error::Result;
 use crate::logical_plan::logical_plan::LogicalPlan;
-use arrow::datatypes::DataType;
+use arrow::datatypes::{self, DataType};
 
 /// A logical expression is an abstract representation of a query condition or filter condition.
 /// It usually consists of logical operators (such as AND, OR, NOT) and comparison operations.
@@ -39,8 +39,10 @@ impl LogicalExpr {
                 ))
             }
             LogicalExpr::Column(_) => todo!(),
-            LogicalExpr::ScalarFuncExpr(_) => todo!(),
-            LogicalExpr::AggregateFuncExpr(_) => todo!(),
+            LogicalExpr::ScalarFuncExpr(scalar_func_expr) => scalar_func_expr.to_field(),
+            LogicalExpr::AggregateFuncExpr(aggregate_func_expr) => {
+                aggregate_func_expr.to_field(input)
+            }
         }
     }
 }
@@ -129,7 +131,7 @@ pub struct Alias {
 /// Represents a series of operations on scalar values
 pub struct ScalarFuncExpr {
     pub func: ScalarFunc,
-    pub expr: Box<LogicalExpr>,
+    pub exprs: Vec<Box<LogicalExpr>>,
 }
 
 #[derive(Clone, Debug)]
@@ -138,6 +140,21 @@ pub enum ScalarFunc {
     SUBSTRING,
     ABS,
     SQRT,
+    POWER,
+}
+
+impl ScalarFuncExpr {
+    pub fn to_field(&self) -> Result<Field> {
+        let (name, data_type) = match self.func {
+            ScalarFunc::CONCAT => (format!("CONCAT({:?})", self.exprs), DataType::Utf8),
+            ScalarFunc::SUBSTRING => (format!("SUBSTRING({:?})", self.exprs), DataType::Utf8),
+            ScalarFunc::ABS => (format!("ABS({:?})", self.exprs), DataType::Int64),
+            ScalarFunc::SQRT => (format!("SQRT({:?})", self.exprs), DataType::Int64),
+            ScalarFunc::POWER => (format!("POWER({:?})", self.exprs), DataType::Int64),
+        };
+
+        Ok(Field::new(name.as_str(), data_type, true))
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -154,4 +171,23 @@ pub enum AggregateFunc {
     MAX,
     AVG,
     COUNT,
+}
+
+impl AggregateFuncExpr {
+    pub fn to_field(&self, input: &LogicalPlan) -> Result<Field> {
+        let field = self.expr.to_field(input)?;
+
+        let (name, data_type) = match self.func {
+            AggregateFunc::SUM => (format!("SUM({})", field.name()), field.data_type()),
+            AggregateFunc::MIN => (format!("Min({})", field.name()), field.data_type()),
+            AggregateFunc::MAX => (format!("Max({})", field.name()), field.data_type()),
+            AggregateFunc::AVG => (format!("AVG({})", field.name()), field.data_type()),
+            AggregateFunc::COUNT => (
+                format!("COUNT({})", field.name()),
+                &datatypes::DataType::Int64,
+            ),
+        };
+
+        Ok(Field::new(name.as_str(), data_type.clone(), true))
+    }
 }
