@@ -9,6 +9,7 @@ pub enum Error {
     NoSuchField,
     ArrowError(ArrowError),
     IOError(io::Error),
+    NoSuchTable(String),
 }
 
 impl From<ArrowError> for Error {

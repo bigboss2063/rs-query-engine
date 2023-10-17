@@ -1,8 +1,10 @@
 use crate::catalog::schema::Schema;
 use crate::error::Result;
 use arrow::record_batch::RecordBatch;
-
 use std::fmt::Debug;
+use std::sync::Arc;
+
+pub type TableRef = Arc<dyn Table>;
 
 /// Implement this trait to implement each data source type, such as memory, csv or Parquet
 pub trait Table: Debug {

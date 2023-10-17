@@ -1,5 +1,5 @@
 use crate::catalog::schema::Schema;
-use crate::catalog::table::Table;
+use crate::catalog::table::{Table, TableRef};
 use crate::error::Result;
 use arrow::{csv, record_batch::RecordBatch};
 use std::env;
@@ -37,7 +37,7 @@ impl Table for CSVTable {
 
 impl CSVTable {
     /// Creates a table from a CSV file.
-    pub fn try_create_table(filename: &str) -> Result<Arc<dyn Table>> {
+    pub fn try_create_table(filename: &str) -> Result<TableRef> {
         let mut file = File::open(env::current_dir()?.join(Path::new(filename))).unwrap();
 
         // Uses Arrow's CSV Reader to get the table's Schema.
