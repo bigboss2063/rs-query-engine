@@ -1,5 +1,6 @@
-use std::{sync::Arc, vec};
 use crate::catalog::{schema::Schema, table::TableRef};
+use core::fmt::Result;
+use std::{fmt::Formatter, sync::Arc, vec};
 
 use super::logical_expr::{AggregateFuncExpr, LogicalExpr};
 
@@ -89,4 +90,77 @@ pub enum JoinType {
     Inner,
     Left,
     Right,
+}
+
+/// Implement more friendly output for logical plan
+fn do_pretty_print(plan: &LogicalPlan, f: &mut Formatter<'_>, depth: usize) -> Result {
+    write!(f, "{}", " ".repeat(depth))?;
+
+    match plan {
+        LogicalPlan::Scan(Scan {
+            data_source,
+            projection,
+        }) => {
+            writeln!(f, "Scan:")?;
+            write!(f, "{}", " ".repeat(depth + 1))?;
+            writeln!(f, "source: {:?}", data_source.source_type())?;
+            write!(f, "{}", " ".repeat(depth + 1))?;
+            writeln!(f, "projection: {:?}", projection)
+        }
+        LogicalPlan::Projection(Projection {
+            input,
+            exprs,
+            schema,
+        }) => {
+            writeln!(f, "Projection:")?;
+            write!(f, "{}", " ".repeat(depth + 1))?;
+            writeln!(f, "input: {:?}", input)?;
+            write!(f, "{}", " ".repeat(depth + 1))?;
+            writeln!(f, "exprs: {:?}", exprs)?;
+            write!(f, "{}", " ".repeat(depth + 1))?;
+            writeln!(f, "schema: {:?}", schema)
+        }
+        LogicalPlan::Selection(Selection { input, expr }) => {
+            writeln!(f, "Selection:")?;
+            write!(f, "{}", " ".repeat(depth + 1))?;
+            writeln!(f, "input: {:?}", input)?;
+            write!(f, "{}", " ".repeat(depth + 1))?;
+            writeln!(f, "exprs: {:?}", expr)
+        }
+        LogicalPlan::Aggregate(Aggregate {
+            input,
+            group_expr,
+            aggr_expr,
+            schema,
+        }) => {
+            writeln!(f, "Aggregate:")?;
+            write!(f, "{}", " ".repeat(depth + 1))?;
+            writeln!(f, "input: {:?}", input)?;
+            write!(f, "{}", " ".repeat(depth + 1))?;
+            writeln!(f, "group_expr: {:?}", group_expr)?;
+            write!(f, "{}", " ".repeat(depth + 1))?;
+            writeln!(f, "aggr_expr: {:?}", aggr_expr)?;
+            write!(f, "{}", " ".repeat(depth + 1))?;
+            writeln!(f, "schema: {:?}", schema)
+        }
+        LogicalPlan::Join(Join {
+            left,
+            on,
+            right,
+            join_type,
+            schema,
+        }) => {
+            writeln!(f, "Join:")?;
+            write!(f, "{}", " ".repeat(depth + 1))?;
+            writeln!(f, "left: {:?}", left)?;
+            write!(f, "{}", " ".repeat(depth + 1))?;
+            writeln!(f, "on: {:?}", on)?;
+            write!(f, "{}", " ".repeat(depth + 1))?;
+            writeln!(f, "right: {:?}", right)?;
+            write!(f, "{}", " ".repeat(depth + 1))?;
+            writeln!(f, "join_type: {:?}", join_type)?;
+            write!(f, "{}", " ".repeat(depth + 1))?;
+            writeln!(f, "schema: {:?}", schema)
+        }
+    }
 }

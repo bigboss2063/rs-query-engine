@@ -13,4 +13,7 @@ pub trait Table: Debug {
 
     /// Scan the data source, selecting the specified columns
     fn scan(&self, projection: Option<Vec<usize>>) -> Result<Vec<RecordBatch>>;
+
+    /// Returns the type of data source
+    fn source_type(&self) -> String;
 }

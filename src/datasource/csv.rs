@@ -33,6 +33,10 @@ impl Table for CSVTable {
         // Otherwise return the entire batch.
         Ok(self.batches.clone())
     }
+
+    fn source_type(&self) -> String {
+        "CSV file".to_string()
+    }
 }
 
 impl CSVTable {
