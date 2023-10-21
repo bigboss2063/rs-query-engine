@@ -38,7 +38,7 @@ impl LogicalExpr {
                     field.is_nullable(),
                 ))
             }
-            LogicalExpr::Column(_) => todo!(),
+            LogicalExpr::Column(column) => input.schema().find_field_by_name(column),
             LogicalExpr::ScalarFuncExpr(scalar_func_expr) => scalar_func_expr.to_field(),
             LogicalExpr::AggregateFuncExpr(aggregate_func_expr) => {
                 aggregate_func_expr.to_field(input)
@@ -49,7 +49,6 @@ impl LogicalExpr {
 
 #[derive(Debug, Clone)]
 pub struct BinaryExpr {
-    pub name: String,
     pub left: Box<LogicalExpr>,
     /// Comparison, logical or arithmetic operators.
     pub op: Operator,

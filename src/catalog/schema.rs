@@ -1,5 +1,5 @@
 use crate::catalog::field::Field;
-use crate::error::Error;
+use crate::error::{Error, Result};
 use arrow::datatypes;
 
 #[derive(Debug, Clone)]
@@ -37,7 +37,7 @@ impl Schema {
         &self.fields[i]
     }
 
-    pub fn index_of(&self, name: &str) -> Result<usize, Error> {
+    pub fn index_of(&self, name: &str) -> Result<usize> {
         for (i, field) in self.fields.iter().enumerate() {
             if field.name() == name {
                 return Ok(i);
@@ -46,10 +46,10 @@ impl Schema {
         Err(Error::NoSuchField)
     }
 
-    pub fn find_field_by_name(&self, name: &str) -> Result<&Field, Error> {
+    pub fn find_field_by_name(&self, name: &str) -> Result<Field> {
         for field in self.fields.iter() {
             if field.name() == name {
-                return Ok(field);
+                return Ok(field.clone());
             }
         }
         Err(Error::NoSuchField)
