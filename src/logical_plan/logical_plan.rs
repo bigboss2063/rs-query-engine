@@ -9,7 +9,7 @@ use std::{
 use super::logical_expr::{AggregateFuncExpr, LogicalExpr};
 
 /// A logic plan is an intermediate representation generated during a query.
-/// It is used to express how to execute a query to satisfy the conditions in a logical expression.
+/// It is used to express how to execute a query to satisfy the conditions in a logical expr.
 /// In the logical plan, the database query engine converts logical expressions to a series of logical operations.
 #[derive(Clone)]
 pub enum LogicalPlan {
@@ -20,7 +20,7 @@ pub enum LogicalPlan {
     /// The Projection logical plan applies a projection to its input.
     /// A projection is a list of expressions to be evaluated against the input data.
     Projection(Projection),
-    /// The selection logical plan applies a filter expression to determine
+    /// The selection logical plan applies a filter expr to determine
     /// which rows should be selected (included) in its output.
     /// This is represented by the WHERE clause in SQL.
     Selection(Selection),

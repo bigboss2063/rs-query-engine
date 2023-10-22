@@ -11,6 +11,8 @@ pub enum Error {
     IOError(io::Error),
     NoSuchTable(String),
     PlanError(String),
+    LogicalPlanError(String),
+    IntervalError(String),
 }
 
 impl From<ArrowError> for Error {

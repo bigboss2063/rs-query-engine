@@ -128,7 +128,7 @@ mod tests {
                 "Vincent Hu",
                 "KamenRider",
                 "nutswalker",
-                "Brian"
+                "Brian",
             ])) as ArrayRef),
             record_batch.column(1)
         );

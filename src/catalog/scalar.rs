@@ -6,9 +6,7 @@ use arrow::{
     datatypes::DataType,
 };
 use std::{iter::repeat, sync::Arc, vec};
-
 use crate::catalog::field::Field;
-use crate::error::Result;
 
 #[derive(Debug, Clone)]
 /// Scalar values can be converted to array values
@@ -39,14 +37,14 @@ macro_rules! scalar_to_array {
 
 impl Scalar {
     /// Creates a Field corresponding to the scalar value type
-    pub fn to_field(&self) -> Result<Field> {
+    pub fn to_field(&self) -> Field {
         match self {
-            Scalar::Null => Ok(Field::new("Null", DataType::Null, true)),
-            Scalar::Boolean(_) => Ok(Field::new("Boolean", DataType::Boolean, true)),
-            Scalar::Float64(_) => Ok(Field::new("Float64", DataType::Float64, true)),
-            Scalar::Int64(_) => Ok(Field::new("Int64", DataType::Int64, true)),
-            Scalar::UInt64(_) => Ok(Field::new("UInt64", DataType::UInt64, true)),
-            Scalar::Utf8(_) => Ok(Field::new("Utf8", DataType::Utf8, true)),
+            Scalar::Null => Field::new("Null", DataType::Null, true),
+            Scalar::Boolean(_) => Field::new("Boolean", DataType::Boolean, true),
+            Scalar::Float64(_) => Field::new("Float64", DataType::Float64, true),
+            Scalar::Int64(_) => Field::new("Int64", DataType::Int64, true),
+            Scalar::UInt64(_) => Field::new("UInt64", DataType::UInt64, true),
+            Scalar::Utf8(_) => Field::new("Utf8", DataType::Utf8, true),
         }
     }
 

@@ -4,7 +4,7 @@ use crate::error::Result;
 use crate::logical_plan::logical_plan::LogicalPlan;
 use arrow::datatypes::{self, DataType};
 
-/// A logical expression is an abstract representation of a query condition or filter condition.
+/// A logical expr is an abstract representation of a query condition or filter condition.
 /// It usually consists of logical operators (such as AND, OR, NOT) and comparison operations.
 #[derive(Debug, Clone)]
 pub enum LogicalExpr {
@@ -13,15 +13,15 @@ pub enum LogicalExpr {
     BinaryExpr(BinaryExpr),
     /// Literal expressions represent literal values.
     Literal(Scalar),
-    /// Alias a logical expression
+    /// Alias a logical expr
     Alias(Alias),
-    /// The Column expression simply represents a reference to a named column.
+    /// The Column expr simply represents a reference to a named column.
     Column(String),
     /// Scalar function expressions perform a scalar function
-    /// such as CONCAT, ABS, LENGTH on an input expression.
+    /// such as CONCAT, ABS, LENGTH on an input expr.
     ScalarFuncExpr(ScalarFuncExpr),
     /// Aggregate function expressions perform an aggregate function
-    /// such as MIN, MAX, COUNT, SUM, or AVG on an input expression.
+    /// such as MIN, MAX, COUNT, SUM, or AVG on an input expr.
     AggregateFuncExpr(AggregateFuncExpr),
 }
 
@@ -29,7 +29,7 @@ impl LogicalExpr {
     pub fn to_field(&self, input: &LogicalPlan) -> Result<Field> {
         match self {
             LogicalExpr::BinaryExpr(expr) => expr.to_field(input),
-            LogicalExpr::Literal(scalar) => scalar.to_field(),
+            LogicalExpr::Literal(scalar) => Ok(scalar.to_field()),
             LogicalExpr::Alias(alias) => {
                 let field = alias.expr.to_field(input)?;
                 Ok(Field::new(
