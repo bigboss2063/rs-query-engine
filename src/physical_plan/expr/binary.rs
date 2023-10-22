@@ -1,6 +1,6 @@
 use crate::error::{Error, Result};
 use crate::logical_plan::logical_expr::Operator;
-use crate::physical_plan::column_vector::ColumnVector;
+use crate::catalog::column_vector::ColumnVector;
 use crate::physical_plan::expr::{PhysicalExpr, PhysicalExprRef};
 use arrow::{
     array::{BooleanArray, PrimitiveArray},
