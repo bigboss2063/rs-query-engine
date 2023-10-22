@@ -1,6 +1,8 @@
 use crate::catalog::table::Table;
 use crate::datasource::csv::CSVTable;
 use crate::error::{Error, Result};
+use crate::logical_plan::data_frame::DataFrame;
+use crate::logical_plan::logical_plan::{LogicalPlan, Scan};
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -26,5 +28,18 @@ impl Catalog {
             .get(table_name)
             .cloned()
             .ok_or_else(|| Error::NoSuchTable(format!("Table {} does not exist", table_name)))
+    }
+
+    pub fn get_table_df(&self, table_name: &str) -> Result<DataFrame> {
+        let table = self
+            .tables
+            .get(table_name)
+            .cloned()
+            .ok_or_else(|| Error::NoSuchTable(format!("No table named: {}", table_name)))?;
+        let plan = LogicalPlan::Scan(Scan {
+            data_source: table,
+            projection: None,
+        });
+        Ok(DataFrame::new(plan))
     }
 }

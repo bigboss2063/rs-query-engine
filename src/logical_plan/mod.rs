@@ -1,2 +1,3 @@
+pub mod data_frame;
 mod logical_expr;
-mod logical_plan;
+pub mod logical_plan;

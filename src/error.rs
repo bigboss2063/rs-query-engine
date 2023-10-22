@@ -10,6 +10,7 @@ pub enum Error {
     ArrowError(ArrowError),
     IOError(io::Error),
     NoSuchTable(String),
+    PlanError(String),
 }
 
 impl From<ArrowError> for Error {

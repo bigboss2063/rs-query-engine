@@ -54,6 +54,12 @@ impl Schema {
         }
         Err(Error::NoSuchField)
     }
+
+    pub fn join(&self, right: &Schema) -> Self {
+        let mut fields = self.fields.clone();
+        fields.extend_from_slice(right.fields().as_slice());
+        Self::new(fields)
+    }
 }
 
 impl From<Schema> for datatypes::Schema {

@@ -106,6 +106,7 @@ pub enum JoinType {
     Inner,
     Left,
     Right,
+    CrossJoin,
 }
 
 /// Implement more friendly output for logical plan
@@ -113,7 +114,10 @@ fn do_pretty_print(plan: &LogicalPlan, f: &mut Formatter<'_>, depth: usize) -> R
     write!(f, "{}", "  ".repeat(depth))?;
 
     match plan {
-        LogicalPlan::Scan(Scan { data_source, projection }) => {
+        LogicalPlan::Scan(Scan {
+            data_source,
+            projection,
+        }) => {
             writeln!(f, "Scan:")?;
 
             write!(f, "{}", "  ".repeat(depth + 1))?;
@@ -121,7 +125,7 @@ fn do_pretty_print(plan: &LogicalPlan, f: &mut Formatter<'_>, depth: usize) -> R
 
             write!(f, "{}", "  ".repeat(depth + 1))?;
             writeln!(f, "projection: {:?}", projection)
-        },
+        }
         LogicalPlan::Projection(Projection {
             exprs,
             input,
