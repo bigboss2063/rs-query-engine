@@ -1,9 +1,10 @@
-use crate::catalog::field::Field;
+use crate::datatype::field::Field;
 use crate::error::{Error, Result};
 use arrow::datatypes;
 
 #[derive(Debug, Clone)]
-/// Schema holds the metadata for a relation
+/// Schema provides metadata for a data source or the results from a query.
+/// A schema consists of one or more fields.
 pub struct Schema {
     fields: Vec<Field>,
 }

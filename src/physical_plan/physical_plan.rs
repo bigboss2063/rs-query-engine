@@ -1,4 +1,4 @@
-use crate::catalog::schema::Schema;
+use crate::datatype::schema::Schema;
 use crate::error::Result;
 use arrow::record_batch::RecordBatch;
 use std::sync::Arc;

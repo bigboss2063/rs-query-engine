@@ -1,3 +1,4 @@
+use crate::datatype::field::Field;
 use arrow::{
     self,
     array::{
@@ -6,7 +7,6 @@ use arrow::{
     datatypes::DataType,
 };
 use std::{iter::repeat, sync::Arc, vec};
-use crate::catalog::field::Field;
 
 #[derive(Debug, Clone)]
 /// Scalar values can be converted to array values
@@ -48,7 +48,7 @@ impl Scalar {
         }
     }
 
-    /// Convert scalar value to array
+    /// Converts the scalar value to an Array, where the Array length is the size recorded in ColumnArray
     pub fn to_array(self, size: usize) -> ArrayRef {
         match self {
             Scalar::Null => new_null_array(&DataType::Null, size),

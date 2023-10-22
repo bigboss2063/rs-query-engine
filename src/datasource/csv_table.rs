@@ -1,5 +1,5 @@
-use crate::catalog::schema::Schema;
-use crate::catalog::table::{Table, TableRef};
+use super::table::{Table, TableRef};
+use crate::datatype::schema::Schema;
 use crate::error::Result;
 use arrow::{csv, record_batch::RecordBatch};
 use std::env;
@@ -46,7 +46,7 @@ impl CSVTable {
 
         // Uses Arrow's CSV Reader to get the table's Schema.
         let (arrow_schema, _) =
-            arrow::csv::reader::infer_reader_schema(&mut file, b',', Some(3), true)?;
+            csv::reader::infer_reader_schema(&mut file, b',', Some(3), true)?;
         // Converts to our own Schema format.
         let schema = Schema::from(&arrow_schema);
 

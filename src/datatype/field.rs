@@ -1,7 +1,8 @@
 use arrow::datatypes::{self, DataType};
 
 #[derive(Debug, Clone)]
-/// Wraps the Field struct from the Arrow
+/// Field provides the name and data type for a field within a schema,
+/// and specifies whether it allows null values or not.
 pub struct Field {
     pub field: datatypes::Field,
 }

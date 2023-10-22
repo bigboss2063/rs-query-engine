@@ -1,12 +1,10 @@
-use crate::catalog::table::Table;
-use crate::datasource::csv::CSVTable;
+use crate::datasource::csv_table::CSVTable;
+use crate::datasource::table::{Table, TableRef};
 use crate::error::{Error, Result};
 use crate::logical_plan::data_frame::DataFrame;
 use crate::logical_plan::logical_plan::{LogicalPlan, Scan};
 use std::collections::HashMap;
 use std::sync::Arc;
-
-use super::table::TableRef;
 
 #[derive(Default)]
 /// Stores metadata for all tables, needs to implement Table trait

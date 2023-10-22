@@ -1,11 +1,14 @@
+use crate::datatype::column_array::ColumnArray;
 use crate::error::{Error, Result};
 use crate::logical_plan::logical_expr::Operator;
-use crate::catalog::column_vector::ColumnVector;
 use crate::physical_plan::expr::{PhysicalExpr, PhysicalExprRef};
 use arrow::{
     array::{BooleanArray, PrimitiveArray},
-    compute::{and, eq_dyn, gt_dyn, gt_eq_dyn, lt_dyn, lt_eq_dyn, neq_dyn, or, add, subtract, multiply, divide, modulus},
-    datatypes::{DataType, Int64Type, UInt64Type, Float64Type},
+    compute::{
+        add, and, divide, eq_dyn, gt_dyn, gt_eq_dyn, lt_dyn, lt_eq_dyn, modulus, multiply, neq_dyn,
+        or, subtract,
+    },
+    datatypes::{DataType, Float64Type, Int64Type, UInt64Type},
     record_batch::RecordBatch,
 };
 use std::any::Any;
@@ -15,7 +18,7 @@ macro_rules! compare_op {
     ($OP:expr, $LEFT:expr, $RIGHT:expr) => {
         $OP($LEFT, $RIGHT)
             .map_err(|e| e.into())
-            .map(|array| ColumnVector::Array(Arc::new(array)))
+            .map(|array| ColumnArray::Array(Arc::new(array)))
     };
 }
 
@@ -29,7 +32,7 @@ macro_rules! binary_op {
         } else {
             let left = $LEFT.as_any().downcast_ref::<BooleanArray>().unwrap();
             let right = $RIGHT.as_any().downcast_ref::<BooleanArray>().unwrap();
-            Ok(ColumnVector::Array(Arc::new($OP(left, right)?)))
+            Ok(ColumnArray::Array(Arc::new($OP(left, right)?)))
         }
     };
 }
@@ -47,7 +50,7 @@ macro_rules! arithmetic_op {
                     .downcast_ref::<PrimitiveArray<Int64Type>>()
                     .unwrap();
                 let x = $OP(left, right)?;
-                Ok(ColumnVector::Array(Arc::new(x)))
+                Ok(ColumnArray::Array(Arc::new(x)))
             }
             DataType::UInt64 => {
                 let left = $LEFT
@@ -59,7 +62,7 @@ macro_rules! arithmetic_op {
                     .downcast_ref::<PrimitiveArray<UInt64Type>>()
                     .unwrap();
                 let x = $OP(left, right)?;
-                Ok(ColumnVector::Array(Arc::new(x)))
+                Ok(ColumnArray::Array(Arc::new(x)))
             }
             DataType::Float64 => {
                 let left = $LEFT
@@ -71,7 +74,7 @@ macro_rules! arithmetic_op {
                     .downcast_ref::<PrimitiveArray<Float64Type>>()
                     .unwrap();
                 let x = $OP(left, right)?;
-                Ok(ColumnVector::Array(Arc::new(x)))
+                Ok(ColumnArray::Array(Arc::new(x)))
             }
             _ => unimplemented!(),
         }
@@ -89,7 +92,7 @@ impl PhysicalExpr for BinaryExpr {
         self
     }
 
-    fn evaluate(&self, input: &RecordBatch) -> Result<ColumnVector> {
+    fn evaluate(&self, input: &RecordBatch) -> Result<ColumnArray> {
         let left_value = self.left.evaluate(input)?;
         let right_value = self.right.evaluate(input)?;
 

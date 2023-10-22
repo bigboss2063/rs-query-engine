@@ -1,5 +1,5 @@
+use crate::datatype::column_array::ColumnArray;
 use crate::error::Result;
-use crate::physical_plan::column_vector::ColumnVector;
 use crate::physical_plan::expr::PhysicalExpr;
 use arrow::record_batch::RecordBatch;
 use std::any::Any;
@@ -13,8 +13,8 @@ impl PhysicalExpr for ColumnExpr {
         self
     }
 
-    fn evaluate(&self, input: &RecordBatch) -> Result<ColumnVector> {
+    fn evaluate(&self, input: &RecordBatch) -> Result<ColumnArray> {
         let column = input.column(self.index).clone();
-        Ok(ColumnVector::Array(column))
+        Ok(ColumnArray::Array(column))
     }
 }

@@ -1,5 +1,5 @@
-use crate::catalog::field::Field;
-use crate::catalog::schema::Schema;
+use crate::datatype::field::Field;
+use crate::datatype::schema::Schema;
 use crate::error::Error::PlanError;
 use crate::error::Result;
 use crate::logical_plan::logical_expr::{AggregateFuncExpr, LogicalExpr};
@@ -115,8 +115,8 @@ impl DataFrame {
 
 #[cfg(test)]
 mod tests {
-    use crate::catalog::catalog::Catalog;
-    use crate::catalog::scalar::Scalar;
+    use crate::datatype::catalog::Catalog;
+    use crate::datatype::scalar::Scalar;
     use crate::error::Result;
     use crate::logical_plan::logical_expr::{BinaryExpr, LogicalExpr, Operator};
 

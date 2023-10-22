@@ -1,7 +1,8 @@
 #![allow(dead_code)]
 
-mod catalog;
+mod datatype;
 mod datasource;
 mod error;
 mod logical_plan;
 mod physical_plan;
+mod catalog;

@@ -1,5 +1,5 @@
-use crate::catalog::field::Field;
-use crate::catalog::scalar::Scalar;
+use crate::datatype::field::Field;
+use crate::datatype::scalar::Scalar;
 use crate::error::Result;
 use crate::logical_plan::logical_plan::LogicalPlan;
 use arrow::datatypes::{self, DataType};
