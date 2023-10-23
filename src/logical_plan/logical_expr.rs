@@ -58,33 +58,33 @@ pub struct BinaryExpr {
 impl BinaryExpr {
     fn to_field(&self, input: &LogicalPlan) -> Result<Field> {
         let left = self.left.to_field(input)?;
-        let left = left.name();
+        let left_name = left.name();
 
-        let right = match &*self.right {
+        let right_name = match &*self.right {
             // If it is a literal value, get the string representation of the value.
             LogicalExpr::Literal(scalar) => scalar.to_string(),
             _ => self.right.to_field(input)?.name().clone(),
         };
 
-        let operator = match self.op {
-            Operator::Eq => "=",
-            Operator::Neq => "!=",
-            Operator::Lt => "<",
-            Operator::LtEq => "<=",
-            Operator::Gt => ">",
-            Operator::GtEq => ">=",
-            Operator::And => "and",
-            Operator::Or => "or",
-            Operator::Add => "+",
-            Operator::Sub => "-",
-            Operator::Mul => "*",
-            Operator::Div => "/",
-            Operator::Mod => "%",
+        let (operator, data_type) = match self.op {
+            Operator::Eq => ("=", DataType::Boolean),
+            Operator::Neq => ("!=", DataType::Boolean),
+            Operator::Lt => ("<", DataType::Boolean),
+            Operator::LtEq => ("<=", DataType::Boolean),
+            Operator::Gt => (">", DataType::Boolean),
+            Operator::GtEq => (">=", DataType::Boolean),
+            Operator::And => ("and", DataType::Boolean),
+            Operator::Or => ("or", DataType::Boolean),
+            Operator::Add => ("+", left.data_type().clone()),
+            Operator::Sub => ("-", left.data_type().clone()),
+            Operator::Mul => ("*", left.data_type().clone()),
+            Operator::Div => ("/", left.data_type().clone()),
+            Operator::Mod => ("%", left.data_type().clone()),
         };
 
         Ok(Field::new(
-            &format!("{} {} {}", left, right, operator),
-            DataType::Boolean,
+            &format!("{} {} {}", left_name, right_name, operator),
+            data_type,
             true,
         ))
     }
