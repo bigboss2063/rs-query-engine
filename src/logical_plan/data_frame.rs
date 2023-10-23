@@ -74,7 +74,7 @@ impl DataFrame {
     }
 
     pub fn join(
-        &self,
+        self,
         right: &LogicalPlan,
         join_type: JoinType,
         on: (Vec<String>, Vec<String>),
