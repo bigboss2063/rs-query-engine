@@ -115,7 +115,7 @@ impl DataFrame {
 
 #[cfg(test)]
 mod tests {
-    use crate::datatype::catalog::Catalog;
+    use crate::catalog::Catalog;
     use crate::datatype::scalar::Scalar;
     use crate::error::Result;
     use crate::logical_plan::logical_expr::{BinaryExpr, LogicalExpr, Operator};
