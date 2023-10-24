@@ -7,6 +7,7 @@ use arrow::datatypes::DataType;
 /// This abstraction also makes it possible to have an implementation for scalar values,
 /// avoiding the need to create and populate a FieldVector with a literal value repeated for
 /// every index in the column.
+#[derive(Debug, Clone)]
 pub enum ColumnArray {
     Array(ArrayRef),
     Literal(Scalar, usize), // the second member represents how many rows this column has
