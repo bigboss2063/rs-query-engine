@@ -1,11 +1,18 @@
 use crate::datatype::column_array::ColumnArray;
 use crate::error::Result;
-use crate::physical_plan::expr::PhysicalExpr;
+use crate::physical_plan::expr::{PhysicalExpr, PhysicalExprRef};
 use arrow::record_batch::RecordBatch;
 use std::any::Any;
+use std::sync::Arc;
 
 pub struct ColumnExpr {
     pub index: usize,
+}
+
+impl ColumnExpr {
+    pub fn new(index: usize) -> PhysicalExprRef {
+        Arc::new(Self { index })
+    }
 }
 
 impl PhysicalExpr for ColumnExpr {

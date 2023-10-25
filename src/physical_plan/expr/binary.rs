@@ -82,9 +82,15 @@ macro_rules! arithmetic_op {
 }
 
 pub struct BinaryExpr {
-    left: PhysicalExprRef,
-    op: Operator,
-    right: PhysicalExprRef,
+    pub left: PhysicalExprRef,
+    pub op: Operator,
+    pub right: PhysicalExprRef,
+}
+
+impl BinaryExpr {
+    pub fn new(left: PhysicalExprRef, op: Operator, right: PhysicalExprRef) -> PhysicalExprRef {
+        Arc::new(Self { left, op, right })
+    }
 }
 
 impl PhysicalExpr for BinaryExpr {
@@ -116,13 +122,13 @@ impl PhysicalExpr for BinaryExpr {
             Operator::GtEq => compare_op!(gt_eq_dyn, &left_array, &right_array),
             Operator::Lt => compare_op!(lt_dyn, &left_array, &right_array),
             Operator::LtEq => compare_op!(lt_eq_dyn, &left_array, &right_array),
-            Operator::Add => binary_op!(
+            Operator::And => binary_op!(
                 and,
                 left_type,
                 right_type,
                 left_array,
                 right_array,
-                Operator::Add
+                Operator::And
             ),
             Operator::Or => binary_op!(
                 or,
@@ -132,7 +138,7 @@ impl PhysicalExpr for BinaryExpr {
                 right_array,
                 Operator::Or
             ),
-            Operator::And => arithmetic_op!(add, left_type, left_array, right_array),
+            Operator::Add => arithmetic_op!(add, left_type, left_array, right_array),
             Operator::Sub => arithmetic_op!(subtract, left_type, left_array, right_array),
             Operator::Mul => arithmetic_op!(multiply, left_type, left_array, right_array),
             Operator::Div => arithmetic_op!(divide, left_type, left_array, right_array),
