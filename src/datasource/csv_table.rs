@@ -45,8 +45,7 @@ impl CSVTable {
         let mut file = File::open(env::current_dir()?.join(Path::new(filename))).unwrap();
 
         // Uses Arrow's CSV Reader to get the table's Schema.
-        let (arrow_schema, _) =
-            csv::reader::infer_reader_schema(&mut file, b',', Some(3), true)?;
+        let (arrow_schema, _) = csv::reader::infer_reader_schema(&mut file, b',', Some(3), true)?;
         // Converts to our own Schema format.
         let schema = Schema::from(&arrow_schema);
 

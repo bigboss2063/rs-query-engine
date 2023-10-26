@@ -1,9 +1,9 @@
-use std::sync::Arc;
-use arrow::record_batch::RecordBatch;
 use crate::datasource::table::TableRef;
 use crate::datatype::schema::Schema;
-use crate::physical_plan::physical_plan::{PhysicalPlan, PhysicalPlanRef};
 use crate::error::Result;
+use crate::physical_plan::physical_plan::{PhysicalPlan, PhysicalPlanRef};
+use arrow::record_batch::RecordBatch;
+use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 pub struct Scan {
@@ -35,11 +35,11 @@ impl PhysicalPlan for Scan {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-    use arrow::array::{ArrayRef, Float64Array, Int64Array, StringArray};
     use crate::datasource::csv_table::CSVTable;
     use crate::error::Result;
     use crate::physical_plan::scan::Scan;
+    use arrow::array::{ArrayRef, Float64Array, Int64Array, StringArray};
+    use std::sync::Arc;
 
     #[test]
     fn scan_physical_plan() -> Result<()> {

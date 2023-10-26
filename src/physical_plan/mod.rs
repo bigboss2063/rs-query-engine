@@ -1,5 +1,6 @@
-mod expr;
-mod physical_plan;
+pub mod expr;
+pub mod physical_plan;
 
-mod scan;
-mod projection;
+pub mod projection;
+pub mod scan;
+pub mod selection;

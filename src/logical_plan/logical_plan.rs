@@ -1,5 +1,5 @@
-use crate::datatype::schema::Schema;
 use crate::datasource::table::TableRef;
+use crate::datatype::schema::Schema;
 use core::fmt::{Debug, Result};
 use std::{
     fmt::{Display, Formatter},
@@ -206,8 +206,8 @@ fn do_pretty_print(plan: &LogicalPlan, f: &mut Formatter<'_>, depth: usize) -> R
 
 #[cfg(test)]
 mod tests {
-    use crate::datatype::scalar::Scalar;
     use crate::datasource::csv_table::CSVTable;
+    use crate::datatype::scalar::Scalar;
     use crate::error::Result;
     use crate::logical_plan::logical_expr::{AggregateFunc, BinaryExpr, Operator};
 

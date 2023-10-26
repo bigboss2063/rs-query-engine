@@ -1,20 +1,24 @@
-use std::sync::Arc;
-use arrow::datatypes::SchemaRef;
-use arrow::record_batch::RecordBatch;
 use crate::datatype::column_array::ColumnArray;
 use crate::datatype::schema::Schema;
+use crate::error::Result;
 use crate::physical_plan::expr::PhysicalExprRef;
 use crate::physical_plan::physical_plan::{PhysicalPlan, PhysicalPlanRef};
-use crate::error::Result;
+use arrow::datatypes::SchemaRef;
+use arrow::record_batch::RecordBatch;
+use std::sync::Arc;
 
-pub struct ProjectionExpr {
+pub struct Projection {
     input: PhysicalPlanRef,
     schema: Schema,
     expr: Vec<PhysicalExprRef>,
 }
 
-impl ProjectionExpr {
-    pub fn new(input: PhysicalPlanRef, schema: Schema, expr: Vec<PhysicalExprRef>) -> PhysicalPlanRef {
+impl Projection {
+    pub fn new(
+        input: PhysicalPlanRef,
+        schema: Schema,
+        expr: Vec<PhysicalExprRef>,
+    ) -> PhysicalPlanRef {
         Arc::new(Self {
             input,
             schema,
@@ -23,7 +27,7 @@ impl ProjectionExpr {
     }
 }
 
-impl PhysicalPlan for ProjectionExpr {
+impl PhysicalPlan for Projection {
     fn schema(&self) -> &Schema {
         &self.schema
     }
@@ -43,9 +47,7 @@ impl PhysicalPlan for ProjectionExpr {
                         .map(|expr| expr.evaluate(record_batch).unwrap())
                         .collect::<Vec<ColumnArray>>()
                         .iter()
-                        .map(|column_array| {
-                            column_array.clone().to_array()
-                        })
+                        .map(|column_array| column_array.clone().to_array())
                         .collect::<Vec<_>>();
                     RecordBatch::try_new(SchemaRef::from(self.schema.clone()), columns).unwrap()
                 })
@@ -61,8 +63,8 @@ impl PhysicalPlan for ProjectionExpr {
 
 #[cfg(test)]
 mod tests {
-    use arrow::array::{ArrayRef, Float64Array, Int64Array};
     use super::*;
+    use arrow::array::{ArrayRef, Float64Array, Int64Array};
 
     use crate::datasource::csv_table::CSVTable;
     use crate::datatype::scalar::Scalar;
@@ -80,12 +82,10 @@ mod tests {
 
         let scan = Scan::new(table.clone(), None);
 
-        let schema = Schema::new(
-            vec![
-                table.schema().field(0).clone(),
-                table.schema().field(3).clone(),
-            ]
-        );
+        let schema = Schema::new(vec![
+            table.schema().field(0).clone(),
+            table.schema().field(3).clone(),
+        ]);
 
         let add_expr = BinaryExpr::new(
             ColumnExpr::new(3),
@@ -95,12 +95,9 @@ mod tests {
 
         let column_expr = ColumnExpr::new(0);
 
-        let expr = vec![
-            column_expr,
-            add_expr,
-        ];
+        let expr = vec![column_expr, add_expr];
 
-        let projection = ProjectionExpr::new(scan, schema, expr);
+        let projection = Projection::new(scan, schema, expr);
 
         let record_batch = projection.execute()?;
 
@@ -108,12 +105,17 @@ mod tests {
 
         let record_batch = &record_batch[0];
 
-        assert_eq!(record_batch.column(0), &(Arc::new(Int64Array::from(vec![1, 2, 3, 4, 5])) as ArrayRef));
-        assert_eq!(record_batch.column(1), &(Arc::new(Float64Array::from(vec![
-            1.0, 101.0, 100.99, 100.98, 100.97,
-        ])) as ArrayRef));
+        assert_eq!(
+            record_batch.column(0),
+            &(Arc::new(Int64Array::from(vec![1, 2, 3, 4, 5])) as ArrayRef)
+        );
+        assert_eq!(
+            record_batch.column(1),
+            &(Arc::new(Float64Array::from(
+                vec![1.0, 101.0, 100.99, 100.98, 100.97,]
+            )) as ArrayRef)
+        );
 
         Ok(())
     }
 }
-
