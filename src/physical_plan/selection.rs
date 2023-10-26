@@ -27,6 +27,8 @@ impl Selection {
 }
 
 macro_rules! build_array_by_predicate {
+    // $PREDICATE represent the result of predicate select on a column
+    // $COLUMN represent the column waiting to be selected
     ($COLUMN: expr, $PREDICATE: expr, $ARRAY_TYPE: ty, $ARRAY_BUILDER: ty, $TYPE: ty) => {{
         let array = $COLUMN.as_any().downcast_ref::<$ARRAY_TYPE>().unwrap();
         let mut builder = <$ARRAY_BUILDER>::new(array.len());
@@ -34,6 +36,7 @@ macro_rules! build_array_by_predicate {
         for (valid, val) in iter {
             match valid {
                 Some(valid) => {
+                    // If this item of the column meets the selection criteria, add it to the new Aarry
                     if valid {
                         builder.append_option(val)?;
                     }
@@ -60,6 +63,7 @@ impl PhysicalPlan for Selection {
             .iter()
             .map(|column_array| column_array.clone().to_array())
             .collect::<Vec<_>>();
+        // Convert from Aarry to BooleanArray for selection operations
         let predicates = predicates
             .iter()
             .map(|array| array.as_any().downcast_ref::<BooleanArray>().unwrap())
