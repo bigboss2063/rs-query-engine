@@ -6,3 +6,4 @@ mod datatype;
 mod error;
 mod logical_plan;
 mod physical_plan;
+mod util;

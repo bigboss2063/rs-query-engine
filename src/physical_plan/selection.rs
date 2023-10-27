@@ -4,6 +4,7 @@ use crate::physical_plan::{
     expr::PhysicalExprRef,
     physical_plan::{PhysicalPlan, PhysicalPlanRef},
 };
+use crate::util::concat_batches;
 use arrow::array::{
     ArrayRef, BooleanBuilder, Float64Array, Float64Builder, Int64Array, Int64Builder, StringArray,
     StringBuilder, UInt64Array, UInt64Builder,
@@ -55,70 +56,44 @@ impl PhysicalPlan for Selection {
 
     fn execute(&self) -> Result<Vec<RecordBatch>> {
         let input = self.input.execute()?;
+        let input = &concat_batches(&self.schema().clone().into(), &input)?;
 
-        let predicates = input
-            .iter()
-            .map(|record_batch| self.expr.evaluate(record_batch).unwrap())
-            .collect::<Vec<_>>()
-            .iter()
-            .map(|column_array| column_array.clone().to_array())
-            .collect::<Vec<_>>();
-        // Convert from Aarry to BooleanArray for selection operations
-        let predicates = predicates
-            .iter()
-            .map(|array| array.as_any().downcast_ref::<BooleanArray>().unwrap())
-            .collect::<Vec<_>>();
+        let predicates = self.expr.evaluate(input)?.to_array();
+        let predicates = predicates.as_any().downcast_ref::<BooleanArray>().unwrap();
 
         let mut batches = vec![];
 
-        for (i, record_batch) in input.iter().enumerate() {
-            let mut columns = vec![];
-            for column in record_batch.columns() {
-                let data_type = column.data_type();
-                let array_ref: ArrayRef = match data_type {
-                    DataType::Boolean => build_array_by_predicate!(
-                        column,
-                        &predicates[i],
-                        BooleanArray,
-                        BooleanBuilder,
-                        bool
-                    ),
-                    DataType::Int64 => build_array_by_predicate!(
-                        column,
-                        &predicates[i],
-                        Int64Array,
-                        Int64Builder,
-                        i64
-                    ),
-                    DataType::UInt64 => build_array_by_predicate!(
-                        column,
-                        &predicates[i],
-                        UInt64Array,
-                        UInt64Builder,
-                        u64
-                    ),
-                    DataType::Float64 => build_array_by_predicate!(
-                        column,
-                        &predicates[i],
-                        Float64Array,
-                        Float64Builder,
-                        f64
-                    ),
-                    DataType::Utf8 => build_array_by_predicate!(
-                        column,
-                        &predicates[i],
-                        StringArray,
-                        StringBuilder,
-                        &str
-                    ),
-                    _ => unimplemented!(),
-                };
-                columns.push(array_ref);
-            }
-            let record_batch =
+        let mut columns = vec![];
+        for column in input.columns() {
+            let data_type = column.data_type();
+            let array_ref: ArrayRef = match data_type {
+                DataType::Boolean => build_array_by_predicate!(
+                    column,
+                    predicates,
+                    BooleanArray,
+                    BooleanBuilder,
+                    bool
+                ),
+                DataType::Int64 => {
+                    build_array_by_predicate!(column, predicates, Int64Array, Int64Builder, i64)
+                }
+                DataType::UInt64 => {
+                    build_array_by_predicate!(column, predicates, UInt64Array, UInt64Builder, u64)
+                }
+                DataType::Float64 => {
+                    build_array_by_predicate!(column, predicates, Float64Array, Float64Builder, f64)
+                }
+                DataType::Utf8 => {
+                    build_array_by_predicate!(column, predicates, StringArray, StringBuilder, &str)
+                }
+                _ => unimplemented!(),
+            };
+            columns.push(array_ref);
+        }
+
+        let record_batch =
                 RecordBatch::try_new(Arc::new(self.schema().clone().into()), columns)?;
             batches.push(record_batch);
-        }
 
         Ok(batches)
     }
