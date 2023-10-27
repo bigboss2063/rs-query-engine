@@ -1,5 +1,5 @@
-use arrow::{compute::concat, datatypes::SchemaRef, record_batch::RecordBatch};
 use crate::error::Result;
+use arrow::{compute::concat, datatypes::SchemaRef, record_batch::RecordBatch};
 
 /// Concatenates an array of `RecordBatch` into one batch
 pub fn concat_batches(schema: &SchemaRef, batches: &[RecordBatch]) -> Result<RecordBatch> {

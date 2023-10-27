@@ -91,9 +91,8 @@ impl PhysicalPlan for Selection {
             columns.push(array_ref);
         }
 
-        let record_batch =
-                RecordBatch::try_new(Arc::new(self.schema().clone().into()), columns)?;
-            batches.push(record_batch);
+        let record_batch = RecordBatch::try_new(Arc::new(self.schema().clone().into()), columns)?;
+        batches.push(record_batch);
 
         Ok(batches)
     }
