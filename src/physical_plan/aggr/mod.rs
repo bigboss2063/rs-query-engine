@@ -5,7 +5,8 @@ use crate::datatype::{field::Field, schema::Schema};
 use crate::error::Result;
 
 pub mod count;
-mod max;
+pub mod max;
+pub mod min;
 
 pub trait AggrOperator {
     fn to_field(&self, schema: &Schema) -> Result<Field>;
