@@ -4,6 +4,7 @@ use crate::datatype::scalar::Scalar;
 use crate::datatype::{field::Field, schema::Schema};
 use crate::error::Result;
 
+pub mod avg;
 pub mod count;
 pub mod max;
 pub mod min;
