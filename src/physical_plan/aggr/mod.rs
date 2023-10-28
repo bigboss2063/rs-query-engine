@@ -7,6 +7,7 @@ use crate::error::Result;
 pub mod count;
 pub mod max;
 pub mod min;
+pub mod sum;
 
 pub trait AggrOperator {
     fn to_field(&self, schema: &Schema) -> Result<Field>;

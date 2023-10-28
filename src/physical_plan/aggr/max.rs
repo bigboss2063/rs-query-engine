@@ -1,5 +1,5 @@
 use crate::datatype::field::Field;
-use crate::datatype::scalar::Scalar::{self, Int64};
+use crate::datatype::scalar::Scalar;
 use crate::datatype::schema::Schema;
 use crate::error::Result;
 use crate::physical_plan::aggr::{AggrOperator, AggrOperatorRef};
@@ -104,9 +104,9 @@ impl AggrOperator for Max {
 
     fn clear(&mut self) -> Result<()> {
         match self.max {
-            Int64(_) => self.max = Scalar::Int64(Some(i64::MIN)),
-            Scalar::UInt64(_) => todo!(),
-            Scalar::Float64(_) => todo!(),
+            Scalar::Int64(_) => self.max = Scalar::Int64(Some(i64::MIN)),
+            Scalar::UInt64(_) => self.max = Scalar::UInt64(Some(u64::MIN)),
+            Scalar::Float64(_) => self.max = Scalar::Float64(Some(f64::MIN)),
             _ => unimplemented!(),
         }
         Ok(())

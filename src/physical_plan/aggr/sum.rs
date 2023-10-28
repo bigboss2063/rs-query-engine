@@ -1,30 +1,30 @@
-use super::{AggrOperator, AggrOperatorRef};
-use crate::{
-    datatype::{field::Field, scalar::Scalar, schema::Schema},
-    error::Result,
-    physical_plan::expr::{column::ColumnExpr, PhysicalExpr},
-};
-use arrow::{
-    array::{Array, PrimitiveArray},
-    datatypes::{DataType, Float64Type, Int64Type, UInt64Type},
-    record_batch::RecordBatch,
-};
+use crate::datatype::field::Field;
+use crate::datatype::scalar::Scalar;
+use crate::datatype::schema::Schema;
+use crate::error::Result;
+use crate::physical_plan::aggr::{AggrOperator, AggrOperatorRef};
+use crate::physical_plan::expr::column::ColumnExpr;
+use crate::physical_plan::expr::PhysicalExpr;
+use arrow::array::{Array, PrimitiveArray};
+use arrow::datatypes::{DataType, Float64Type, Int64Type, UInt64Type};
+use arrow::record_batch::RecordBatch;
 
-pub struct Min {
-    min: Scalar,
+pub struct Sum {
+    sum: Scalar,
     column: ColumnExpr,
 }
 
-impl Min {
+impl Sum {
     pub fn new(data_type: DataType, column: ColumnExpr) -> AggrOperatorRef {
         let scalar_value = match data_type {
-            DataType::Int64 => Scalar::Int64(Some(i64::MAX)),
-            DataType::UInt64 => Scalar::UInt64(Some(u64::MAX)),
-            DataType::Float64 => Scalar::Float64(Some(f64::MAX)),
+            DataType::Int64 => Scalar::Int64(Some(0i64)),
+            DataType::UInt64 => Scalar::UInt64(Some(0u64)),
+            DataType::Float64 => Scalar::Float64(Some(0f64)),
             _ => unimplemented!(),
         };
+
         Box::new(Self {
-            min: scalar_value,
+            sum: scalar_value,
             column,
         })
     }
@@ -36,12 +36,11 @@ macro_rules! update_batch {
             .as_any()
             .downcast_ref::<PrimitiveArray<$DT>>()
             .unwrap();
-        for val in column.into_iter().flatten() {
-            if let Scalar::$SCALARTYPE(Some(cur_min)) = $SELF.min {
-                if val < cur_min {
-                    $SELF.min = Scalar::$SCALARTYPE(Some(val))
-                }
+        if let Scalar::$SCALARTYPE(Some(mut sum)) = $SELF.sum {
+            for val in column.into_iter().flatten() {
+                sum += val;
             }
+            $SELF.sum = Scalar::$SCALARTYPE(Some(sum));
         }
     }};
 }
@@ -53,21 +52,19 @@ macro_rules! update {
             .downcast_ref::<PrimitiveArray<$DT>>()
             .unwrap();
         if !column.is_null($IDX) {
-            if let Scalar::$SCALARTYPE(Some(cur_min)) = $SELF.min {
-                let val = column.value($IDX);
-                if val < cur_min {
-                    $SELF.min = Scalar::$SCALARTYPE(Some(val))
-                }
+            if let Scalar::$SCALARTYPE(Some(mut sum)) = $SELF.sum {
+                sum += column.value($IDX);
+                $SELF.sum = Scalar::$SCALARTYPE(Some(sum));
             }
         }
     }};
 }
 
-impl AggrOperator for Min {
+impl AggrOperator for Sum {
     fn to_field(&self, schema: &Schema) -> Result<Field> {
         let field = schema.field(self.column.index);
         Ok(Field::new(
-            format!("MIN({})", field.name()).as_str(),
+            format!("SUM({})", field.name()).as_str(),
             field.data_type().clone(),
             false,
         ))
@@ -100,14 +97,14 @@ impl AggrOperator for Min {
     }
 
     fn evaluate(&self) -> Result<Scalar> {
-        Ok(self.min.clone())
+        Ok(self.sum.clone())
     }
 
     fn clear(&mut self) -> Result<()> {
-        match self.min {
-            Scalar::Int64(_) => self.min = Scalar::Int64(Some(i64::MAX)),
-            Scalar::UInt64(_) => self.min = Scalar::UInt64(Some(u64::MAX)),
-            Scalar::Float64(_) => self.min = Scalar::Float64(Some(f64::MAX)),
+        match self.sum {
+            Scalar::Int64(_) => self.sum = Scalar::Int64(Some(0i64)),
+            Scalar::UInt64(_) => self.sum = Scalar::UInt64(Some(0u64)),
+            Scalar::Float64(_) => self.sum = Scalar::Float64(Some(0f64)),
             _ => unimplemented!(),
         }
 
