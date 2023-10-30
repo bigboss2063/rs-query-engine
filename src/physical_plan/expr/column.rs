@@ -5,6 +5,7 @@ use arrow::record_batch::RecordBatch;
 use std::any::Any;
 use std::sync::Arc;
 
+#[derive(Clone)]
 pub struct ColumnExpr {
     pub index: usize,
 }
