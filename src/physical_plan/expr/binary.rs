@@ -1,4 +1,5 @@
 use crate::datatype::column_array::ColumnArray;
+use crate::datatype::field::Field;
 use crate::error::{Error, Result};
 use crate::logical_plan::logical_expr::Operator;
 use crate::physical_plan::expr::{PhysicalExpr, PhysicalExprRef};
@@ -13,6 +14,8 @@ use arrow::{
 };
 use std::any::Any;
 use std::sync::Arc;
+
+use super::literal::LiteralExpr;
 
 macro_rules! compare_op {
     ($OP:expr, $LEFT:expr, $RIGHT:expr) => {
@@ -144,5 +147,39 @@ impl PhysicalExpr for BinaryExpr {
             Operator::Div => arithmetic_op!(divide, left_type, left_array, right_array),
             Operator::Mod => arithmetic_op!(modulus, left_type, left_array, right_array),
         }
+    }
+
+    fn to_field(&self, input: &RecordBatch) -> Result<Field> {
+        let left = self.left.to_field(input)?;
+        let left_name = left.name();
+
+        let right = &*self.right.as_any();
+
+        let right_name = match right {
+            right if right.is::<LiteralExpr>() => self.right.to_field(input)?.name().clone(),
+            _ => self.right.to_field(input)?.name().clone(),
+        };
+
+        let (operator, data_type) = match self.op {
+            Operator::Eq => ("=", DataType::Boolean),
+            Operator::Neq => ("!=", DataType::Boolean),
+            Operator::Lt => ("<", DataType::Boolean),
+            Operator::LtEq => ("<=", DataType::Boolean),
+            Operator::Gt => (">", DataType::Boolean),
+            Operator::GtEq => (">=", DataType::Boolean),
+            Operator::And => ("and", DataType::Boolean),
+            Operator::Or => ("or", DataType::Boolean),
+            Operator::Add => ("+", left.data_type().clone()),
+            Operator::Sub => ("-", left.data_type().clone()),
+            Operator::Mul => ("*", left.data_type().clone()),
+            Operator::Div => ("/", left.data_type().clone()),
+            Operator::Mod => ("%", left.data_type().clone()),
+        };
+
+        Ok(Field::new(
+            &format!("{} {} {}", left_name, operator, right_name),
+            data_type,
+            true,
+        ))
     }
 }

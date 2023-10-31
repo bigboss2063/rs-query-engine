@@ -88,7 +88,7 @@ pub struct Selection {
 #[derive(Debug, Clone)]
 pub struct Aggregate {
     pub input: Arc<LogicalPlan>,
-    pub group_expr: Vec<LogicalExpr>,
+    pub group_expr: LogicalExpr,
     pub aggr_expr: Vec<AggregateFuncExpr>,
     pub schema: Schema,
 }
@@ -270,7 +270,7 @@ mod tests {
 
         let aggregate = LogicalPlan::Aggregate(Aggregate {
             input: scan.clone(),
-            group_expr: vec![LogicalExpr::Column("age".to_string())],
+            group_expr: LogicalExpr::Column("age".to_string()),
             aggr_expr: vec![AggregateFuncExpr {
                 func: AggregateFunc::MAX,
                 expr: Box::new(LogicalExpr::Column("age".to_string())),

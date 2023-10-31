@@ -3,6 +3,7 @@ pub mod column;
 pub mod literal;
 
 use crate::datatype::column_array::ColumnArray;
+use crate::datatype::field::Field;
 use crate::error::Result;
 use arrow::record_batch::RecordBatch;
 use std::any::Any;
@@ -14,4 +15,6 @@ pub trait PhysicalExpr {
     fn as_any(&self) -> &dyn Any;
 
     fn evaluate(&self, input: &RecordBatch) -> Result<ColumnArray>;
+
+    fn to_field(&self, input: &RecordBatch) -> Result<Field>;
 }

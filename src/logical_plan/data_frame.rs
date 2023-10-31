@@ -49,13 +49,10 @@ impl DataFrame {
 
     pub fn aggregate(
         self,
-        group_expr: Vec<LogicalExpr>,
+        group_expr: LogicalExpr,
         aggr_expr: Vec<AggregateFuncExpr>,
     ) -> Result<Self> {
-        let mut fields = group_expr
-            .iter()
-            .map(|expr| expr.to_field(&self.plan).unwrap())
-            .collect::<Vec<Field>>();
+        let mut fields = vec![group_expr.to_field(&self.plan)?];
         fields.append(
             &mut aggr_expr
                 .iter()

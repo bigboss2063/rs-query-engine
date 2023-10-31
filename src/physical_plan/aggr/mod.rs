@@ -1,4 +1,4 @@
-use arrow::array::{PrimitiveArray, StringArray, BooleanArray};
+use arrow::array::{BooleanArray, PrimitiveArray, StringArray};
 use arrow::datatypes::{DataType, Int64Type, UInt64Type};
 use arrow::record_batch::RecordBatch;
 use std::collections::HashMap;
@@ -35,7 +35,7 @@ pub type AggrOperatorRef = Box<dyn AggrOperator>;
 
 pub struct Aggregation {
     input: PhysicalPlanRef,
-    group_expr: Vec<PhysicalExprRef>,
+    group_expr: Option<PhysicalExprRef>,
     aggr_expr: Mutex<Vec<AggrOperatorRef>>,
     schema: Schema,
 }
@@ -43,7 +43,7 @@ pub struct Aggregation {
 impl Aggregation {
     pub fn new(
         input: PhysicalPlanRef,
-        group_expr: Vec<PhysicalExprRef>,
+        group_expr: Option<PhysicalExprRef>,
         aggr_expr: Vec<AggrOperatorRef>,
         schema: Schema,
     ) -> PhysicalPlanRef {
@@ -108,6 +108,13 @@ impl PhysicalPlan for Aggregation {
     fn execute(&self) -> Result<Vec<RecordBatch>> {
         let mut fields = vec![];
 
+        let batches = self.input.execute()?;
+        let batch = concat_batches(&Arc::new(self.schema().clone().into()), batches.as_slice())?;
+
+        // if let Some(group_expr) = &self.group_expr {
+        //     fields.push(group_expr.to_field(&batch)?);
+        // }
+
         // Generates Schema based on aggregation operations
         let mut aggr_ops = self.aggr_expr.lock().unwrap();
         for aggr_op in aggr_ops.iter() {
@@ -116,9 +123,7 @@ impl PhysicalPlan for Aggregation {
 
         let schema = Schema::new(fields);
 
-        let batches = self.input.execute()?;
-
-        if self.group_expr.is_empty() {
+        if self.group_expr.is_none() {
             // Since `self.aggr_expr` is wrapped in a Mutex,
             // we can obtain a mutable reference of `self.aggr_expr` after locking it
             for batch in &batches {
@@ -139,11 +144,8 @@ impl PhysicalPlan for Aggregation {
 
             Ok(vec![record_batch])
         } else {
-            let batch = concat_batches(&Arc::new(self.schema().clone().into()), batches.as_slice())?;
-
-            for expr in self.group_expr.iter() {
-                let column = expr.evaluate(&batch)?.to_array();
-
+            if let Some(group_expr) = &self.group_expr {
+                let column = group_expr.evaluate(&batch)?.to_array();
                 match column.data_type() {
                     DataType::Int64 => {
                         let column = column
@@ -170,7 +172,7 @@ impl PhysicalPlan for Aggregation {
                             batch,
                             Arc::new(schema.clone().into())
                         );
-                    },
+                    }
                     DataType::Boolean => {
                         let column = column.as_any().downcast_ref::<BooleanArray>().unwrap();
                         return group_by_datatype!(
@@ -180,7 +182,7 @@ impl PhysicalPlan for Aggregation {
                             batch,
                             Arc::new(schema.clone().into())
                         );
-                    },
+                    }
                     DataType::Utf8 => {
                         let column = column.as_any().downcast_ref::<StringArray>().unwrap();
                         return group_by_datatype!(
@@ -214,16 +216,12 @@ mod tests {
         error::Result,
         logical_plan::logical_expr::Operator,
         physical_plan::{
-            expr::{
-                binary::BinaryExpr,
-                column::ColumnExpr,
-                literal::LiteralExpr,
-            },
+            expr::{binary::BinaryExpr, column::ColumnExpr, literal::LiteralExpr},
             scan::Scan,
         },
     };
 
-    use super::{*, max::Max, min::Min, count::Count, avg::Avg, sum::Sum};
+    use super::{avg::Avg, count::Count, max::Max, min::Min, sum::Sum, *};
 
     #[test]
     fn test_aggregation() -> Result<()> {
@@ -246,9 +244,12 @@ mod tests {
         let avg = Avg::new(DataType::Float64, column.clone());
         let sum = Sum::new(DataType::Float64, column.clone());
 
-        let aggregation = Aggregation::new(scan, vec![group_expr], vec![
-            max, min, count, avg, sum,
-        ], source.schema().clone());
+        let aggregation = Aggregation::new(
+            scan,
+            Some(group_expr),
+            vec![max, min, count, avg, sum],
+            source.schema().clone(),
+        );
 
         let batch = aggregation.execute()?;
 
