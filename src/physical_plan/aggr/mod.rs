@@ -57,7 +57,7 @@ impl Aggregation {
 }
 
 macro_rules! group_by_datatype {
-    ($COLUMN: expr, $GROUP_BY_DT: ty, $AGGR_OPS: expr, $BATCH: expr, $SCHEMA: expr) => {{
+    ($COLUMN: expr, $GROUP_BY_DT: ty, $AGGR_OPS: expr, $BATCH: expr, $SCHEMA: expr, $SCALAR_TYPE: ident) => {{
         let mut group_idxs = HashMap::<$GROUP_BY_DT, Vec<usize>>::new();
 
         for (idx, val) in $COLUMN.iter().enumerate() {
@@ -72,7 +72,7 @@ macro_rules! group_by_datatype {
 
         let mut batches = vec![];
 
-        for group_idx in group_idxs.values() {
+        for (val, group_idx) in group_idxs.into_iter() {
             for idx in group_idx.iter() {
                 for aggr_op in $AGGR_OPS.iter_mut() {
                     aggr_op.update(&$BATCH, *idx)?;
@@ -80,6 +80,8 @@ macro_rules! group_by_datatype {
             }
 
             let mut arrays = vec![];
+
+            arrays.push(Scalar::$SCALAR_TYPE(Some(val)).to_array(1));
 
             for aggr_op in $AGGR_OPS.iter() {
                 let array = aggr_op.evaluate()?.to_array(1);
@@ -111,9 +113,9 @@ impl PhysicalPlan for Aggregation {
         let batches = self.input.execute()?;
         let batch = concat_batches(&Arc::new(self.schema().clone().into()), batches.as_slice())?;
 
-        // if let Some(group_expr) = &self.group_expr {
-        //     fields.push(group_expr.to_field(&batch)?);
-        // }
+        if let Some(group_expr) = &self.group_expr {
+            fields.push(group_expr.to_field(&batch)?);
+        }
 
         // Generates Schema based on aggregation operations
         let mut aggr_ops = self.aggr_expr.lock().unwrap();
@@ -146,6 +148,7 @@ impl PhysicalPlan for Aggregation {
         } else {
             if let Some(group_expr) = &self.group_expr {
                 let column = group_expr.evaluate(&batch)?.to_array();
+
                 match column.data_type() {
                     DataType::Int64 => {
                         let column = column
@@ -157,7 +160,8 @@ impl PhysicalPlan for Aggregation {
                             i64,
                             aggr_ops,
                             batch,
-                            Arc::new(schema.clone().into())
+                            Arc::new(schema.clone().into()),
+                            Int64
                         );
                     }
                     DataType::UInt64 => {
@@ -170,7 +174,8 @@ impl PhysicalPlan for Aggregation {
                             u64,
                             aggr_ops,
                             batch,
-                            Arc::new(schema.clone().into())
+                            Arc::new(schema.clone().into()),
+                            UInt64
                         );
                     }
                     DataType::Boolean => {
@@ -180,18 +185,54 @@ impl PhysicalPlan for Aggregation {
                             bool,
                             aggr_ops,
                             batch,
-                            Arc::new(schema.clone().into())
+                            Arc::new(schema.clone().into()),
+                            Boolean
                         );
                     }
                     DataType::Utf8 => {
+                        let mut group_idxs = HashMap::<&str, Vec<usize>>::new();
                         let column = column.as_any().downcast_ref::<StringArray>().unwrap();
-                        return group_by_datatype!(
-                            column,
-                            &str,
-                            aggr_ops,
-                            batch,
-                            Arc::new(schema.clone().into())
-                        );
+                        for (idx, val) in column.iter().enumerate() {
+                            if let Some(val) = val {
+                                if let Some(idxs) = group_idxs.get_mut(&val) {
+                                    idxs.push(idx);
+                                } else {
+                                    group_idxs.insert(val, vec![idx]);
+                                }
+                            }
+                        }
+
+                        let mut batches = vec![];
+
+                        for (val, group_idx) in group_idxs.into_iter() {
+                            for idx in group_idx.iter() {
+                                for aggr_op in aggr_ops.iter_mut() {
+                                    aggr_op.update(&batch, *idx)?;
+                                }
+                            }
+
+                            let mut arrays = vec![];
+
+                            arrays.push(Scalar::Utf8(Some(val.to_string())).to_array(1));
+
+                            for aggr_op in aggr_ops.iter() {
+                                let array = aggr_op.evaluate()?.to_array(1);
+                                arrays.push(array);
+                            }
+
+                            for aggr_op in aggr_ops.iter_mut() {
+                                aggr_op.clear()?;
+                            }
+
+                            let batch =
+                                RecordBatch::try_new(Arc::new(schema.clone().into()), arrays)?;
+                            batches.push(batch);
+                        }
+
+                        let batch =
+                            concat_batches(&Arc::new(schema.clone().into()), batches.as_slice())?;
+
+                        return Ok(vec![batch]);
                     }
                     _ => unimplemented!(),
                 }
@@ -231,7 +272,7 @@ mod tests {
 
         let group_expr = BinaryExpr::new(
             ColumnExpr::new(2),
-            Operator::GtEq,
+            Operator::LtEq,
             LiteralExpr::new(Scalar::Int64(Some(24))),
         );
 
