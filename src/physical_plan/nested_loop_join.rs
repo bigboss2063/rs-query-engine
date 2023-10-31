@@ -158,31 +158,40 @@ mod tests {
 
     use arrow::util::pretty;
 
-    use crate::{error::Result, datasource::csv_table::CSVTable, physical_plan::{scan::Scan, expr::{binary::BinaryExpr, literal::LiteralExpr}, selection::Selection}, logical_plan::logical_expr::Operator, datatype::scalar::Scalar};
     use super::*;
+    use crate::{datasource::csv_table::CSVTable, error::Result, physical_plan::scan::Scan};
 
     #[test]
     fn test_nested_loop_join() -> Result<()> {
-        let source = CSVTable::try_create_table("data/test.csv")?;
+        let test_source = CSVTable::try_create_table("data/test.csv")?;
+        let salary_source = CSVTable::try_create_table("data/salary.csv")?;
 
-        let scan = Scan::new(source.clone(), None);
+        let test_source_scan = Scan::new(test_source.clone(), None);
+        let salary_source_scan = Scan::new(salary_source.clone(), None);
 
-        let id_column = ColumnExpr::new(0).as_any().downcast_ref::<ColumnExpr>().unwrap().clone();
-        let age_column = ColumnExpr::new(2).as_any().downcast_ref::<ColumnExpr>().unwrap().clone();
+        let id_column = ColumnExpr::new(0)
+            .as_any()
+            .downcast_ref::<ColumnExpr>()
+            .unwrap()
+            .clone();
 
-        let selection = Selection::new(scan.clone(), BinaryExpr::new(
-            ColumnExpr::new(1),
-            Operator::Eq,
-            LiteralExpr::new(Scalar::Utf8(Some("Brian".to_string()))),
-        ));
-
-        let fields = vec![scan.schema().fields().clone(), scan.schema().fields().clone()];
-        let schema = Schema::new(fields.iter().flatten().map(|field| {
-            field.clone()
-        }).collect::<Vec<_>>());
+        let fields = vec![
+            test_source.schema().fields().clone(),
+            salary_source.schema().fields().clone(),
+        ];
+        let schema = Schema::new(
+            fields
+                .iter()
+                .flatten()
+                .map(|field| field.clone())
+                .collect::<Vec<_>>(),
+        );
 
         let nested_loop_join = NestedLoopJoin::new(
-            scan.clone(), selection.clone(), vec![(id_column.clone(), id_column.clone()),(age_column.clone(), age_column.clone())], schema.clone()
+            test_source_scan.clone(),
+            salary_source_scan.clone(),
+            vec![(id_column.clone(), id_column.clone())],
+            schema.clone(),
         );
 
         let batch = nested_loop_join.execute()?;
