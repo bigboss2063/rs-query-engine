@@ -107,7 +107,6 @@ pub enum JoinType {
     Inner,
     Left,
     Right,
-    CrossJoin,
 }
 
 /// Implement more friendly output for logical plan

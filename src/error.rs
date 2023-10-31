@@ -7,8 +7,8 @@ pub enum Error {
     ArrowError(ArrowError),
     IOError(io::Error),
     NoSuchTable(String),
-    PlanError(String),
     LogicalPlanError(String),
+    PhysicalPlanError(String),
     IntervalError(String),
 }
 

@@ -1,6 +1,6 @@
 use crate::datatype::field::Field;
 use crate::datatype::schema::Schema;
-use crate::error::Error::PlanError;
+use crate::error::Error::LogicalPlanError;
 use crate::error::Result;
 use crate::logical_plan::logical_expr::{AggregateFuncExpr, LogicalExpr};
 use crate::logical_plan::logical_plan::{
@@ -77,7 +77,7 @@ impl DataFrame {
         on: (Vec<String>, Vec<String>),
     ) -> Result<Self> {
         if on.0.len() != on.1.len() {
-            return Err(PlanError(
+            return Err(LogicalPlanError(
                 "The number of columns to be joined must be the same".to_string(),
             ));
         }

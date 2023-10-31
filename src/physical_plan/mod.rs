@@ -5,3 +5,4 @@ pub mod aggr;
 pub mod projection;
 pub mod scan;
 pub mod selection;
+pub mod nested_loop_join;
