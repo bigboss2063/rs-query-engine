@@ -1,7 +1,7 @@
+pub mod alias;
 pub mod binary;
 pub mod column;
 pub mod literal;
-pub mod alias;
 
 use crate::datatype::column_array::ColumnArray;
 use crate::datatype::field::Field;

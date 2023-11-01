@@ -6,29 +6,29 @@ use arrow::record_batch::RecordBatch;
 use std::any::Any;
 use std::sync::Arc;
 
-pub struct Alias {
+pub struct AliasExpr {
     name: String,
-    index: usize,
+    expr: PhysicalExprRef,
 }
 
-impl Alias {
-    pub fn new(name: String, index: usize) -> PhysicalExprRef {
-        Arc::new(Self { name, index })
+impl AliasExpr {
+    pub fn new(name: String, expr: PhysicalExprRef) -> PhysicalExprRef {
+        Arc::new(Self { name, expr })
     }
 }
 
-impl PhysicalExpr for Alias {
+impl PhysicalExpr for AliasExpr {
     fn as_any(&self) -> &dyn Any {
         self
     }
 
     fn evaluate(&self, input: &RecordBatch) -> Result<ColumnArray> {
-        let column = input.column(self.index).clone();
+        let column = self.expr.evaluate(input)?.to_array();
         Ok(ColumnArray::Array(column))
     }
 
     fn to_field(&self, input: &RecordBatch) -> Result<Field> {
-        let field = input.schema().field(self.index).clone();
-        Ok(Field::new(&self.name, field.data_type().clone(), false))
+        let column = self.expr.evaluate(input)?.to_array();
+        Ok(Field::new(&self.name, column.data_type().clone(), false))
     }
 }

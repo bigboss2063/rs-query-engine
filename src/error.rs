@@ -10,6 +10,7 @@ pub enum Error {
     LogicalPlanError(String),
     PhysicalPlanError(String),
     IntervalError(String),
+    NoSuchColumn(String),
 }
 
 impl From<ArrowError> for Error {
