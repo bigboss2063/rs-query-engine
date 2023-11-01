@@ -10,9 +10,9 @@ use crate::error::Result;
 use crate::util::concat_batches;
 use crate::{datatype::schema::Schema, error};
 
-use arrow::array::{Array, Int64Builder, PrimitiveArray};
+use arrow::array::{Array, Int64Builder, PrimitiveArray, StringArray};
 use arrow::compute;
-use arrow::datatypes::Int64Type;
+use arrow::datatypes::{DataType, Float64Type, Int64Type, UInt64Type};
 use arrow::record_batch::RecordBatch;
 
 pub struct NestedLoopJoin {
@@ -36,6 +36,27 @@ impl NestedLoopJoin {
             schema,
         })
     }
+}
+
+macro_rules! join_by_type {
+    ($LEFT_COL: expr, $RIGHT_COL: expr, $DT: ty, $LEFT_FLAGS: expr, $RIGHT_FLAGS: expr, $Index: expr) => {{
+        let left_col = $LEFT_COL.as_any().downcast_ref::<$DT>().unwrap();
+        let right_col = $RIGHT_COL.as_any().downcast_ref::<$DT>().unwrap();
+
+        for (left_pos, left_val) in left_col.iter().enumerate() {
+            for (right_pos, right_val) in right_col.iter().enumerate() {
+                match (left_val, right_val) {
+                    (Some(left_val), Some(right_val)) => {
+                        if left_val == right_val {
+                            $LEFT_FLAGS[$Index][left_pos] = true;
+                            $RIGHT_FLAGS[$Index][right_pos] = true;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }};
 }
 
 impl PhysicalPlan for NestedLoopJoin {
@@ -71,33 +92,49 @@ impl PhysicalPlan for NestedLoopJoin {
             left_flags.push(vec![false; left_col.len()]);
             right_flags.push(vec![false; right_col.len()]);
 
-            if left_col.data_type() != right_col.data_type() {
+            let left_dt = left_col.data_type();
+            let right_dt = right_col.data_type();
+
+            if left_dt != right_dt {
                 return Err(error::Error::PhysicalPlanError(
                     "Left and right types of on should match".to_string(),
                 ));
             }
 
-            let left_col = left_col
-                .as_any()
-                .downcast_ref::<PrimitiveArray<Int64Type>>()
-                .unwrap();
-            let right_col = right_col
-                .as_any()
-                .downcast_ref::<PrimitiveArray<Int64Type>>()
-                .unwrap();
-
-            for (left_pos, left_val) in left_col.iter().enumerate() {
-                for (right_pos, right_val) in right_col.iter().enumerate() {
-                    match (left_val, right_val) {
-                        (Some(left_val), Some(right_val)) => {
-                            if left_val == right_val {
-                                left_flags[i][left_pos] = true;
-                                right_flags[i][right_pos] = true;
-                            }
-                        }
-                        _ => {}
-                    }
-                }
+            match left_dt {
+                DataType::Int64 => join_by_type!(
+                    left_col,
+                    right_col,
+                    PrimitiveArray<Int64Type>,
+                    &mut left_flags,
+                    &mut right_flags,
+                    i
+                ),
+                DataType::UInt64 => join_by_type!(
+                    left_col,
+                    right_col,
+                    PrimitiveArray<UInt64Type>,
+                    &mut left_flags,
+                    &mut right_flags,
+                    i
+                ),
+                DataType::Float64 => join_by_type!(
+                    left_col,
+                    right_col,
+                    PrimitiveArray<Float64Type>,
+                    &mut left_flags,
+                    &mut right_flags,
+                    i
+                ),
+                DataType::Utf8 => join_by_type!(
+                    left_col,
+                    right_col,
+                    StringArray,
+                    &mut left_flags,
+                    &mut right_flags,
+                    i
+                ),
+                _ => unimplemented!(),
             }
         }
 
@@ -175,6 +212,12 @@ mod tests {
             .unwrap()
             .clone();
 
+        let name_column = ColumnExpr::new(1)
+            .as_any()
+            .downcast_ref::<ColumnExpr>()
+            .unwrap()
+            .clone();
+
         let fields = vec![
             test_source.schema().fields().clone(),
             salary_source.schema().fields().clone(),
@@ -190,7 +233,10 @@ mod tests {
         let nested_loop_join = NestedLoopJoin::new(
             test_source_scan.clone(),
             salary_source_scan.clone(),
-            vec![(id_column.clone(), id_column.clone())],
+            vec![
+                (id_column.clone(), id_column.clone()),
+                (name_column.clone(), name_column.clone()),
+            ],
             schema.clone(),
         );
 
