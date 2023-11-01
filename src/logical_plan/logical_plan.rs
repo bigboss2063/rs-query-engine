@@ -27,7 +27,7 @@ pub enum LogicalPlan {
     Selection(Selection),
     /// Aggregate logical plan calculates aggregates of underlying data
     /// such as calculating minimum, maximum, averages, and sums of data.
-    Aggregate(Aggregate),
+    Aggregation(Aggregation),
     /// Join two logical plans on one or more join columns
     Join(Join),
 }
@@ -38,7 +38,7 @@ impl LogicalPlan {
             LogicalPlan::Scan(Scan { data_source, .. }) => data_source.schema(),
             LogicalPlan::Projection(Projection { schema, .. }) => schema,
             LogicalPlan::Selection(Selection { input, .. }) => input.schema(),
-            LogicalPlan::Aggregate(Aggregate { schema, .. }) => schema,
+            LogicalPlan::Aggregation(Aggregation { schema, .. }) => schema,
             LogicalPlan::Join(Join { schema, .. }) => schema,
         }
     }
@@ -48,7 +48,7 @@ impl LogicalPlan {
             LogicalPlan::Scan(_) => vec![], // Scan logical plan has no sublogical plan
             LogicalPlan::Projection(Projection { input, .. }) => vec![input.clone()],
             LogicalPlan::Selection(Selection { input, .. }) => vec![input.clone()],
-            LogicalPlan::Aggregate(Aggregate { input, .. }) => vec![input.clone()],
+            LogicalPlan::Aggregation(Aggregation { input, .. }) => vec![input.clone()],
             LogicalPlan::Join(Join { left, right, .. }) => vec![left.clone(), right.clone()],
         }
     }
@@ -86,7 +86,7 @@ pub struct Selection {
 }
 
 #[derive(Debug, Clone)]
-pub struct Aggregate {
+pub struct Aggregation {
     pub input: Arc<LogicalPlan>,
     pub group_expr: LogicalExpr,
     pub aggr_expr: Vec<AggregateFuncExpr>,
@@ -153,7 +153,7 @@ fn do_pretty_print(plan: &LogicalPlan, f: &mut Formatter<'_>, depth: usize) -> R
             writeln!(f, "input:")?;
             do_pretty_print(input.as_ref(), f, depth + 2)
         }
-        LogicalPlan::Aggregate(Aggregate {
+        LogicalPlan::Aggregation(Aggregation {
             input,
             group_expr,
             aggr_expr,
@@ -267,7 +267,7 @@ mod tests {
             format!("{}", projection)
         );
 
-        let aggregate = LogicalPlan::Aggregate(Aggregate {
+        let aggregate = LogicalPlan::Aggregation(Aggregation {
             input: scan.clone(),
             group_expr: LogicalExpr::Column("age".to_string()),
             aggr_expr: vec![AggregateFuncExpr {

@@ -4,7 +4,7 @@ use crate::error::Error::LogicalPlanError;
 use crate::error::Result;
 use crate::logical_plan::logical_expr::{AggregateFuncExpr, LogicalExpr};
 use crate::logical_plan::logical_plan::{
-    Aggregate, Join, JoinType, LogicalPlan, Projection, Selection,
+    Aggregation, Join, JoinType, LogicalPlan, Projection, Selection,
 };
 use std::sync::Arc;
 
@@ -61,7 +61,7 @@ impl DataFrame {
         );
         let schema = Schema::new(fields);
         Ok(Self {
-            plan: LogicalPlan::Aggregate(Aggregate {
+            plan: LogicalPlan::Aggregation(Aggregation {
                 input: Arc::new(self.plan),
                 group_expr,
                 aggr_expr,
