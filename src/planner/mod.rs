@@ -1,6 +1,4 @@
 use crate::error::{Error::NoSuchColumn, Result};
-use crate::logical_plan::logical_expr::AggregateFunc;
-use crate::physical_plan::aggr::sum::Sum;
 use crate::physical_plan::expr::alias::AliasExpr;
 use crate::physical_plan::expr::column::ColumnExpr;
 use crate::physical_plan::expr::literal::LiteralExpr;
