@@ -37,7 +37,6 @@ pub struct Aggregation {
     input: PhysicalPlanRef,
     group_expr: Option<PhysicalExprRef>,
     aggr_expr: Mutex<Vec<AggrOperatorRef>>,
-    schema: Schema,
 }
 
 impl Aggregation {
@@ -45,13 +44,11 @@ impl Aggregation {
         input: PhysicalPlanRef,
         group_expr: Option<PhysicalExprRef>,
         aggr_expr: Vec<AggrOperatorRef>,
-        schema: Schema,
     ) -> PhysicalPlanRef {
         Arc::new(Self {
             input,
             group_expr,
             aggr_expr: Mutex::new(aggr_expr),
-            schema,
         })
     }
 }
@@ -104,7 +101,7 @@ macro_rules! group_by_datatype {
 
 impl PhysicalPlan for Aggregation {
     fn schema(&self) -> &Schema {
-        &self.schema
+        &self.input.schema()
     }
 
     fn execute(&self) -> Result<Vec<RecordBatch>> {
@@ -289,7 +286,6 @@ mod tests {
             scan,
             Some(group_expr),
             vec![max, min, count, avg, sum],
-            source.schema().clone(),
         );
 
         let batch = aggregation.execute()?;

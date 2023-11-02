@@ -1,8 +1,16 @@
 use crate::error::Error;
 use crate::error::Result;
+use crate::logical_plan::logical_expr::AggregateFunc::{AVG, COUNT, MAX, MIN, SUM};
+use crate::physical_plan::aggr::avg::Avg;
+use crate::physical_plan::aggr::count::Count;
+use crate::physical_plan::aggr::max::Max;
+use crate::physical_plan::aggr::min::Min;
+use crate::physical_plan::aggr::sum::Sum;
+use crate::physical_plan::aggr::Aggregation;
 use crate::physical_plan::expr::alias::AliasExpr;
 use crate::physical_plan::expr::column::ColumnExpr;
 use crate::physical_plan::expr::literal::LiteralExpr;
+use crate::physical_plan::expr::PhysicalExpr;
 use crate::physical_plan::nested_loop_join::NestedLoopJoin;
 use crate::physical_plan::physical_plan::PhysicalPlanRef;
 use crate::physical_plan::projection::Projection;
@@ -37,8 +45,35 @@ impl QueryPlanner {
                 let input = QueryPlanner::create_physical_plan(&selection.input)?;
                 Ok(Selection::new(input, expr))
             }
-            LogicalPlan::Aggregation(_aggreagtion) => {
-                todo!()
+            LogicalPlan::Aggregation(aggreagtion) => {
+                let field = aggreagtion.group_expr.to_field(&aggreagtion.input)?;
+
+                let group_expr = QueryPlanner::create_physical_expr(
+                    &aggreagtion.input,
+                    &aggreagtion.group_expr,
+                )?;
+
+                let mut aggr_expr = vec![];
+
+                for aggr_func_expr in aggreagtion.aggr_expr.iter() {
+                    let column = QueryPlanner::create_physical_expr(
+                        &aggreagtion.input,
+                        &aggr_func_expr.expr,
+                    )?;
+                    let column = column.as_any().downcast_ref::<ColumnExpr>().unwrap();
+
+                    match aggr_func_expr.func {
+                        SUM => aggr_expr.push(Sum::new(field.data_type().clone(), column.clone())),
+                        MIN => aggr_expr.push(Min::new(field.data_type().clone(), column.clone())),
+                        MAX => aggr_expr.push(Max::new(field.data_type().clone(), column.clone())),
+                        AVG => aggr_expr.push(Avg::new(field.data_type().clone(), column.clone())),
+                        COUNT => aggr_expr.push(Count::new(column.clone())),
+                    }
+                }
+
+                let input = QueryPlanner::create_physical_plan(&aggreagtion.input)?;
+
+                Ok(Aggregation::new(input, Some(group_expr), aggr_expr))
             }
             LogicalPlan::Join(join) => {
                 let left = QueryPlanner::create_physical_plan(join.left.as_ref())?;
